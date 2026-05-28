@@ -1,51 +1,22 @@
 ;screen locations for ladders, barrels, etc
 data_for_screen_1_setup
-!if USE_8k_MEMORY_LAYOUT = 1 {
 
 ; 8x ladders
-!byte $F3,$0F
-!byte $F4,$0F
-!byte $3F,$11
-!byte $9F,$11
-!byte $46,$10
-!byte $4C,$10
-!byte $97,$10
-!byte $F7,$10
+!byte $f3, _SCREEN_HIGH-1
+!byte $f4, _SCREEN_HIGH-1
+!byte $3f, _SCREEN_HIGH+1
+!byte $9f, _SCREEN_HIGH+1
+!byte $46, _SCREEN_HIGH
+!byte $4c, _SCREEN_HIGH
+!byte $97, _SCREEN_HIGH
+!byte $f7, _SCREEN_HIGH
 
-!byte $00,$00
-!byte $35,$10  ;barrel
-!byte $20,$00
-!byte $00,$DE
-!byte $10,$20  ;barrel
-!byte $00,$00
-!byte $84,$11  ;barrel
-!byte $20,$00
-!byte $00,$00
-!byte $BA,$11  ;mickey
-!byte $14,$14
-
-} else {
-
-; 8x ladders
-!byte $F3,$1D
-!byte $F4,$1D
-!byte $3F,$1F
-!byte $9F,$1F
-!byte $46,$1E
-!byte $4C,$1E
-!byte $97,$1E
-!byte $F7,$1E
-
-!byte $00,$00  ;15 and 16
-!byte $35,$1E  ;barrel
-!byte $20,$00
-!byte $00,$DE
-!byte $1E,$20  ;barrel
-!byte $00,$00
-!byte $84,$1F  ;barrel
-!byte $20,$00
-!byte $00,$00
-!byte $BA,$1F  ;mickey
-!byte $14,$14  ;35 and 36
-
-}
+!byte $00, $00  ;in zero page $0f, $10
+!byte $35, _SCREEN_HIGH  ;barrel, in zero page $11, $12
+!byte $20, $00, $00  ;in zero page $13, $14, $15
+!byte $de, _SCREEN_HIGH  ;barrel, in zero page $16, $17
+!byte $20, $00, $00  ;in zero page $18, $19, $1a
+!byte $84, _SCREEN_HIGH+1  ;barrel, in zero page $1b, $1c
+!byte $20, $00, $00, $00  ;in zero page $1d, $1e, $1f, $20
+!byte $ba, _SCREEN_HIGH+1  ;mickey, in zero page $21, $22
+!byte $14, $14  ;in zero page $23, $24
