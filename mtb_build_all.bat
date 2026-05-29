@@ -10,8 +10,6 @@ call :create_prg_file_for_version
 
 :: Binary file comparison for unexpanded version
 fc.exe /b ".\prg\%PRG%" ".\prg\Mickey the Bricky original.prg"
-echo File comparison complete
-
 echo --- Unexpanded version built ---
 
 ::-----------------------------------------------------------------------------------
@@ -22,8 +20,6 @@ call :create_prg_file_for_version
 
 :: Binary file comparison for tested 8k version
 fc.exe /b ".\prg\%PRG%" ".\prg\mickey bricky 8k tested.prg"
-echo File comparison complete
-
 echo --- 8k version built ---
 
 goto :build_d64

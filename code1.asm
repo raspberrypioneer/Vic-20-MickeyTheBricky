@@ -37,12 +37,12 @@ start_game
    sta sound_delay2
 
    ;set interrupt
-   sei
+   sei  ;disable interrupt
    lda #<interrupt_actions
    sta _IRQ_VECTOR_LOW
    lda #>interrupt_actions
    sta _IRQ_VECTOR_HIGH
-   cli
+   cli  ;enable interrupt
 
    jsr draw_screen_1
    lda #1
@@ -52,7 +52,7 @@ start_game
 
 prepare_mickey_start
    ldx #head_look_right  ;head look right character
-   jsr label_common_sub2
+   jsr mickey_animate_and_collision_check_last_sprite
    lda #0
    sta music_on_off
    jmp draw_move_barrels
@@ -110,7 +110,7 @@ do_barrel_move
    beq .move_barrel_left_to_right
    dey
    beq .move_barrel_down
-   bne .move_barrel_right_to_left
+   bne .move_barrel_right_to_left  ;always branch
 
 .move_barrel_left_to_right
    lda $03  ;previous value in $01
@@ -296,7 +296,7 @@ draw_scroll_message
    bne .wait_for_start_input
    dec $51
    bne .wait_for_start_input
-   beq .scroll_message
+   beq .scroll_message  ;always branch
 
 .clear_scroll_message
    ldy #21
@@ -425,36 +425,36 @@ save_y_and_update_score
    ldy $50
    rts
 
-label_1315
+mickey_falls_off_platform
    tya
    pha
-   jsr label_common_sub1
+   jsr mickey_animate_and_collision_check_active_sprite
    pla
    cmp #42
-   beq label_1336
+   beq .start_fall_off_platform
    cmp #41
-   bne label_1327
+   bne .fall_off_platform_right
    lda #22
-   bne label_1329
+   bne .fall_off_platform_left
 
-label_1327
+.fall_off_platform_right
    lda #20
 
-label_1329
-   sta $50
+.fall_off_platform_left
+   sta $50  ;holds #20 or #22 at this point
    sec
    lda mickey_low
-   sbc $50
+   sbc $50  ;subtract #20 or #22
    sta mickey_low
    bcs *+4  ;skip high byte update line below
    dec mickey_high
 
-label_1336
-   sei
+.start_fall_off_platform
+   sei  ;disable interrupt (stop game play sound and bonus countdown)
    lda #240
    sta _SOUND3
 
-label_133c
+.mickey_falls_off_platform_loop
    clc
    lda mickey_low
    adc #21  ;add 21 to get to next line
@@ -486,7 +486,7 @@ label_133c
    sec
    lda #20
    cpx #space  ;space character
-   beq label_133c
+   beq .mickey_falls_off_platform_loop
    clc
    lda mickey_low
    adc #21  ;add 21 to get to next line
@@ -505,24 +505,23 @@ player_dies
    sta (mickey_low),y
    ldy #254
    lda #128
-   sei
+   sei  ;disable interrupt (stop game play sound and bonus countdown)
    sty _SOUND3
 
 .sound_loop_end_life_start
-
    ldx #6
 .sound_delay_end_life
    dey
    bne .sound_delay_end_life
    dex
    bne .sound_delay_end_life
-
    dec _SOUND3
    cmp _SOUND3
    bmi .sound_loop_end_life_start
+
    dec player_lives
    bpl draw_screen_using_screen_number
-   cli
+   cli  ;enable interrupt (enable game play sound and bonus countdown)
    jsr update_player_score
    jmp start_game
 
@@ -531,22 +530,22 @@ draw_screen_using_screen_number
    clc
    adc screen_number
    tay
-   lda data_screen_start_addresses,y
-   sta $0200
+   lda data_screen_start_addresses,y  ;draw screen 1, 2, 3 or 4 low byte
+   sta draw_screen_address
    iny
-   lda data_screen_start_addresses,y
-   sta $0201
-   lda #>.return_from_jmp
+   lda data_screen_start_addresses,y  ;draw screen 1, 2, 3 or 4 high byte
+   sta draw_screen_address+1
+   lda #>.return_from_draw_screen
    pha
-   lda #<.return_from_jmp
+   lda #<.return_from_draw_screen
    pha
-   jmp ($0200)  ;goto screen draw routine
-.return_from_jmp
+   jmp (draw_screen_address)  ;goto screen draw routine
+.return_from_draw_screen
    nop
-   sei
+
+   sei  ;disable interrupt (stop game play sound and bonus countdown)
    ldy #4
    sty _SOUND3
-
 .sound_loop_2_speakers
    dex
    bne .sound_loop_2_speakers
@@ -554,15 +553,15 @@ draw_screen_using_screen_number
    bne .sound_loop_2_speakers
    dey
    bne .sound_loop_2_speakers
-   cli
+   cli  ;enable interrupt (enable game play sound and bonus countdown)
    jmp prepare_mickey_start
 
 data_screen_start_addresses
-!byte <draw_screen_1, >draw_screen_1
-!byte <draw_screen_1, >draw_screen_1
-!byte <draw_screen_2, >draw_screen_2
-!byte <draw_screen_3, >draw_screen_3
-!byte <draw_screen_4, >draw_screen_4
+    !byte <draw_screen_1, >draw_screen_1
+    !byte <draw_screen_1, >draw_screen_1
+    !byte <draw_screen_2, >draw_screen_2
+    !byte <draw_screen_3, >draw_screen_3
+    !byte <draw_screen_4, >draw_screen_4
 
 update_player_score
    ldy #0
@@ -595,34 +594,34 @@ update_player_score
 player_actions
    lda jump_allowed
    beq check_for_a_jump_action
-   jsr label_common_sub1
-   bcc .check_for_score_update  ;always branch
-
+   jsr mickey_animate_and_collision_check_active_sprite
+   bcc .check_jumped_barrel_for_score_update
 goto_player_dies
    jmp player_dies
 
-.check_for_score_update
+.check_jumped_barrel_for_score_update
    ldy #42
    lda (mickey_low),y
-   bne .skip_score_update
+   bne .mickey_jump_action
    lda #5
    jsr update_score  ;score updated by 50 for jumping barrel
 
-.skip_score_update
+.mickey_jump_action
+   ;do the 'down' part of the jump
    lda mickey_low
-   adc $27
+   adc mickey_jump_right_same_left  ;#20, #21, #22
    sta mickey_low
    bcc *+4  ;skip high byte update line below
    inc mickey_high
    ldx $55
-   jsr label_common_sub2
+   jsr mickey_animate_and_collision_check_last_sprite
    bcs goto_player_dies
    dec jump_allowed
    ldy #42
    lda (mickey_low),y
    cmp #space  ;space character
    bne goto_move_barrels
-   jmp label_1315
+   jmp mickey_falls_off_platform
 
 goto_move_barrels
    jmp draw_move_barrels
@@ -663,49 +662,52 @@ check_left_jump
    beq .jump_left_direction
    lda _KEYB_COLS  ;Read keyboard address
    and #16
-   bne .no_left_right_jump
+   bne .jump_left_right_or_straight_up
 
 .jump_left_direction
    ldx #head_look_left  ;head look left character
    iny
 
-.no_left_right_jump
-   sty $27
+.jump_left_right_or_straight_up  ;or after left right jump action
+   sty mickey_jump_right_same_left  ;#20, #21, #22
    lda #1
-   sta jump_allowed  ;jump not allowed
-   jsr label_common_sub1
+   sta jump_allowed  ;jump not allowed while jump action is in progress (no double jumping)
+   jsr mickey_animate_and_collision_check_active_sprite
    bcs goto_player_dies
+
+   ;do the 'up' part of the jump
    sec
    lda mickey_low
-   sbc $27
+   sbc mickey_jump_right_same_left  ;#20, #21, #22
    sta mickey_low
    bcs *+4  ;skip high byte update line below
    dec mickey_high
-   lda $27
+
+   lda mickey_jump_right_same_left  ;#20, #21, #22
    tay
    cmp #20
-   bne label_14a9
-   ldy #22
+   bne .not_right_jump
+   ldy #22  ;Y = #20, now #22
 
-label_14a9
+.not_right_jump
    cmp #22
-   bne label_14af
-   ldy #20
+   bne .not_left_jump
+   ldy #20  ;Y = #22, now #20
 
-label_14af
-   sty $27
-   jsr label_common_sub2
-   bcc .check_for_score_update2
+.not_left_jump
+   sty mickey_jump_right_same_left  ;#20, #21, #22
+   jsr mickey_animate_and_collision_check_last_sprite
+   bcc .check_jumped_barrel_for_score_update2
    jmp player_dies
 
-.check_for_score_update2
+.check_jumped_barrel_for_score_update2
    ldy #42
    lda (mickey_low),y
-   bne .skip_score_update2
+   bne .mickey_jump_action2
    lda #5
    jsr update_score  ;score updated by 50 for jumping barrel
 
-.skip_score_update2
+.mickey_jump_action2
    cmp #brick  ;platform brick character
    bne goto_move_barrels2
    lda #0
@@ -723,16 +725,15 @@ check_up_direction
    bne check_down_direction
 
 .check_on_ladder
-   lda $24
+   lda mickey_body_last_sprite
    cmp #ladder  ;ladder character
    beq .is_on_ladder1
    cmp #topladder  ;top of ladder character
    bne check_down_direction
 
 .is_on_ladder1
-   jsr label_common_sub1
+   jsr mickey_animate_and_collision_check_active_sprite
    bcc .update_climbing_ladder
-
 goto_player_dies2
    jmp player_dies
 
@@ -744,7 +745,7 @@ goto_player_dies2
    bcs *+4  ;skip high byte update line below
    dec mickey_high
    ldx #head_climb_ladder
-   jsr label_common_sub2
+   jsr mickey_animate_and_collision_check_last_sprite
    bcs goto_player_dies2
    jmp draw_move_barrels
 
@@ -765,7 +766,7 @@ check_down_direction
    bne .check_left_direction
 
 .is_on_ladder2
-   jsr label_common_sub1
+   jsr mickey_animate_and_collision_check_active_sprite
    bcs goto_player_dies2
    clc
    lda mickey_low
@@ -774,7 +775,7 @@ check_down_direction
    bcc *+4  ;skip high byte update line below
    inc mickey_high
    ldx #head_climb_ladder
-   jsr label_common_sub2
+   jsr mickey_animate_and_collision_check_last_sprite
    bcs goto_player_dies2
 
 .check_left_direction
@@ -785,13 +786,13 @@ check_down_direction
    and #16
    bne .check_right_direction
 
-.joystick_left_direction
+.joystick_left_direction  ;also right direction checked
    ldy #20
    lda (mickey_low),y
    cmp #space  ;space character
-   beq label_1570
+   beq .moving_along_as_normal
    cmp #ladder  ;ladder character
-   beq label_1570
+   beq .moving_along_as_normal
    cmp #hammer  ;hammer character
    bmi .check_right_direction
    cmp #headstone  ;headstone character
@@ -799,22 +800,22 @@ check_down_direction
    ldy #41
    lda (mickey_low),y
    cmp #space  ;space character
-   bne label_1570
+   bne .moving_along_as_normal
    ldy #62
    lda (mickey_low),y
    cmp #space  ;space character
-   bne label_1570
+   bne .moving_along_as_normal
    lda #head_look_left  ;head look left character
    sta $55
    ldy #41
-   jmp label_1315
+   jmp mickey_falls_off_platform
 
-label_1570
-   jsr label_common_sub1
-   bcc label_1578
+.moving_along_as_normal
+   jsr mickey_animate_and_collision_check_active_sprite
+   bcc .no_collision_continue
    jmp player_dies
 
-label_1578
+.no_collision_continue
    ldy mickey_low
    bne *+4  ;skip high byte update line below
    dec mickey_high
@@ -822,7 +823,7 @@ label_1578
    ldy #42
    lda (mickey_low),y
    cmp #space  ;space character
-   bne .continue50
+   bne .not_moving_down
    clc
    lda mickey_low
    adc #21  ;add 21 to get to next line
@@ -830,9 +831,9 @@ label_1578
    bcc *+4  ;skip high byte update line below
    inc mickey_high
 
-.continue50
+.not_moving_down
    ldx #head_look_left  ;head look left character
-   jsr label_common_sub2
+   jsr mickey_animate_and_collision_check_last_sprite
    bcc .check_right_direction
    jmp player_dies
 
@@ -842,7 +843,7 @@ label_1578
    beq .move_right_direction
    lda _KEYB_COLS  ;Read keyboard address
    and #8
-   bne label_15ff
+   bne collision_check_active_sprite
 
 .move_right_direction
    ldy #22
@@ -852,9 +853,9 @@ label_1578
    cmp #ladder  ;ladder character
    beq .move_along_or_next_to_ladder
    cmp #hammer  ;hammer character
-   bmi label_15ff
+   bmi collision_check_active_sprite
    cmp #headstone  ;headstone character
-   bpl label_15ff
+   bpl collision_check_active_sprite
 
 .move_along_or_next_to_ladder
    ldy #43
@@ -866,10 +867,10 @@ label_1578
    cmp #space  ;space character
    bne .not_a_space2
    ldy #43
-   jmp label_1315
+   jmp mickey_falls_off_platform
 
 .not_a_space2
-   jsr label_common_sub1
+   jsr mickey_animate_and_collision_check_active_sprite
    bcc .update_player_address
    jmp player_dies
 
@@ -890,13 +891,13 @@ label_1578
 
 .not_a_space
    ldx #head_look_right  ;head look right character
-   jsr label_common_sub2
-   bcc label_15ff
+   jsr mickey_animate_and_collision_check_last_sprite
+   bcc collision_check_active_sprite
 
 goto_player_dies3
    jmp player_dies
 
-label_15ff
+collision_check_active_sprite
    ldy player_is_alive
    bne goto_player_dies3
    lda (mickey_low),y
@@ -914,31 +915,32 @@ label_15ff
    lda (mickey_low),y
    cmp #space  ;space character
    beq .space_ahead_continue
-   jsr label_common_sub1
+   jsr mickey_animate_and_collision_check_active_sprite
    lda mickey_low
    adc #21  ;add 21 to get to next line
    sta mickey_low
    bcc *+4  ;skip high byte update line below
    inc mickey_high
-   jsr label_common_sub2
+   jsr mickey_animate_and_collision_check_last_sprite
 
 .space_ahead_continue
    ldy #42
-   jmp label_1315
+   jmp mickey_falls_off_platform
 
 check_got_treasure
-   lda $24
+   lda mickey_body_last_sprite
    cmp #hammer  ;hammer character
    bmi .check_reached_end_row
    cmp #headstone  ;headstone character
    bpl .check_reached_end_row
+
    ;got treasure (hammer, bag, saw) here
    lda #245
    sta _SOUND3
    lda #16
    sta sound_delay2
    lda #space  ;space character
-   sta $24
+   sta mickey_body_last_sprite
    clc
    lda mickey_low
    sta $60  ;colour map low byte
@@ -984,44 +986,46 @@ increment_score_at_end
    jmp draw_screen_using_screen_number
 
 .not_at_end_row_so_continue
-   jsr label_169c
+   jsr .check_for_pause
    jmp draw_move_barrels
 
-;TODO: I think this might be a pause
-label_169c
+;Pause game by pressing odd numbers on the keyboard (and a few other keys on that part of the matrix)
+;Bonus counts down via the interrupt however!
+.check_for_pause
    lda _KEYB_COLS  ;Read keyboard address
    and #1
-   beq label_16a4
+   beq .pause_key_pressed
    rts
 
-label_16a4
+.pause_key_pressed
    lda _KEYB_COLS  ;Read keyboard address
    and #1
-   beq label_16a4
+   beq .pause_key_pressed
 
-label_16ab
+.pause_key_released
    lda _KEYB_COLS  ;Read keyboard address
    and #1
-   bne label_16ab
+   bne .pause_key_released
 
-label_16b2
+;For key debounce
+.pause_key_pressed2
    lda _KEYB_COLS  ;Read keyboard address
    and #1
-   beq label_16b2
+   beq .pause_key_pressed2
    rts
 
-label_common_sub1
+mickey_animate_and_collision_check_active_sprite
    ldy #0
    lda (mickey_low),y
    cmp #2
    bmi .set_carry_and_return
-   lda $23
+   lda mickey_head_last_sprite
    sta (mickey_low),y
    ldy #21
    lda (mickey_low),y
    cmp #2
    bmi .set_carry_and_return
-   lda $24
+   lda mickey_body_last_sprite
    sta (mickey_low),y
    clc
    rts
@@ -1030,29 +1034,29 @@ label_common_sub1
    sec
    rts
 
-label_common_sub2
+mickey_animate_and_collision_check_last_sprite
    stx $55  ;X is mickey head new value
    ldy #0
    lda (mickey_low),y
-   sta $23  ;mickey head previous value
+   sta mickey_head_last_sprite
    txa
    sta (mickey_low),y  ;mickey head new value
-   ldy #21  ;TODO line below?
+   ldy #21  ;Point to body address
    lda (mickey_low),y
-   sta $24  ;mickey body previous value
-   dex
+   sta mickey_body_last_sprite
+   dex  ;the correct body sprite is always one down from the head value
    txa
    sta (mickey_low),y  ;mickey body new value
 
    lda #2
-   cmp $23
-   bpl .set_carry_and_return
-   cmp $24
-   bpl .set_carry_and_return
-   lda #wall  ;wall character
-   cmp $23
+   cmp mickey_head_last_sprite
+   bpl .set_carry_and_return  ;branch if 2 >= mickey_head_last_sprite (i.e. barrel, A, B sprites)
+   cmp mickey_body_last_sprite
+   bpl .set_carry_and_return  ;branch if 2 >= mickey_body_last_sprite (i.e. barrel, A, B sprites)
+   lda #wall
+   cmp mickey_head_last_sprite
    beq .set_carry_and_return
-   cmp $24
+   cmp mickey_body_last_sprite
    beq .set_carry_and_return
    clc
    rts

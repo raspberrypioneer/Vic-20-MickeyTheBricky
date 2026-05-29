@@ -14,6 +14,7 @@ _IRQ_VECTOR_LOW = $0314  ;788
 _IRQ_VECTOR_HIGH = $0315  ;789
 
 ;-----------------------------------------------------------------------------------
+draw_screen_address = $0200
 player_score = $033c
 player_lives = $40
 screen_number = $41
@@ -33,6 +34,9 @@ barrel3_high = $1c
 jump_allowed = $20
 mickey_low = $21
 mickey_high = $22
+mickey_head_last_sprite = $23
+mickey_body_last_sprite = $24
+mickey_jump_right_same_left = $27  ;holds jump value 20 = up-right, 21 = straight-up, 22 = up-left
 
 ;-----------------------------------------------------------------------------------
 ;Character map
@@ -53,6 +57,9 @@ copyright_circle = 39  ;Copyright circle
 body_stand_left = 40  ;Micky's body standing left (#player_is_alive)
 body_walk_left = 41  ;Micky's body walking left
 head_look_left = 42 ;Micky's head looking left
+blank_space = 43  ;space character
+body_climb_ladder1 = 44  ;Mickey's body climb ladder 1
+body_climb_ladder2 = 45  ;Mickey's body climb ladder 2
 head_climb_ladder = 46  ;Micky's head climbing ladder
 another_space = 47  ;space character used in score
 zero_char = 48  ;zero character (#$30)
