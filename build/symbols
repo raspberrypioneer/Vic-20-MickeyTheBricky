@@ -1,11 +1,11 @@
 	_IRQ_VECTOR_LOW	= $314
 	barrel	= $0
-	clear_player_score	= $1210
 	data_junk_hex_1701_255_bytes	= $1901	; unused
 	check_got_treasure	= $1836	; ?
 	data_for_sound	= $14c8	; ?
 	check_for_a_jump_action	= $1648	; ?
 	saw	= $1d	; unused
+	current_address_offset	= $0
 	another_space	= $2f
 	ladder	= $21
 	body_climb_ladder2	= $2d	; unused
@@ -15,10 +15,12 @@
 	start_of_program	= $120e	; unused
 	_DATADIR_A	= $9123
 	_DATADIR_B	= $9122
+	clear_player_and_screen_score	= $126b	; ?
 	black	= $0	; unused
 	draw_move_barrels	= $134e	; ?
 	colour_in_platforms	= $1fe2	; ?
 	save_y_and_update_score	= $150d
+	ladder_low	= $21
 	mickey_animate_and_collision_check_active_sprite	= $18ba	; ?
 	headstone	= $1e
 	update_player_score	= $15ec	; ?
@@ -33,7 +35,6 @@
 	check_up_direction	= $16cf	; ?
 	zero_char	= $30
 	data_for_screen_2_setup	= $1eaa	; ?
-	draw_scroll_message	= $138c	; ?
 	data_for_screen_1_setup	= $1b45	; ?
 	red	= $2
 	barrel3_low	= $1b
@@ -57,12 +58,14 @@
 	draw_single_ladder	= $1fc4	; ?
 	barrel_delay_x	= $56
 	collision_check_active_sprite	= $17ff	; ?
+	ladder_high	= $22
 	goto_player_dies2	= $16ec
+	scroll_message_and_wait_to_start	= $138c	; ?
 	goto_player_dies3	= $17fc
 	mickey_high	= $22
 	copyright_circle	= $27	; unused
 	white	= $1
-	set_barrel_green_colour	= $132c	; ?
+	two_lines_below_offset	= $2a
 	head_look_right	= $26
 	body_stand_right	= $24	; unused
 	goto_move_barrels	= $1645	; ?
@@ -72,10 +75,10 @@
 	goto_player_dies	= $1619
 	player_lives	= $40
 	mickey_jump_right_same_left	= $27
+	three_lines_below_offset	= $3f
 	_SCREEN_ADDR	= $1000
 	body_walk_left	= $29	; unused
 	mickey_body_last_sprite	= $24
-	clear_score	= $126b	; ?
 	_VICCR2_VALUE	= $15
 	data_for_redefined_characters	= $1c00	; unused
 	do_barrel_move	= $1289
@@ -89,7 +92,6 @@
 	_VICCR5_VALUE	= $cf
 	space	= $20
 	draw_screen_4	= $1a00	; ?
-	setup_barrel_move	= $133e
 	update_score	= $14e8
 	head_look_left	= $2a
 	green	= $5
@@ -100,6 +102,7 @@
 	head_climb_ladder	= $2e
 	yellow	= $7
 	barrel2_high	= $17	; unused
+	line_below_offset	= $15
 	increment_score_at_end	= $1873
 	prepare_mickey_start	= $125f
 	barrel1_high	= $12	; unused

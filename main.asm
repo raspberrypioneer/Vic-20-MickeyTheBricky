@@ -38,6 +38,10 @@ mickey_head_last_sprite = $23
 mickey_body_last_sprite = $24
 mickey_jump_right_same_left = $27  ;holds jump value 20 = up-right, 21 = straight-up, 22 = up-left
 
+;same as mickey addresses above used for drawing ladders in screen draw
+ladder_low = $21
+ladder_high = $22
+
 ;-----------------------------------------------------------------------------------
 ;Character map
 barrel = 0  ;barrel character
@@ -63,6 +67,13 @@ body_climb_ladder2 = 45  ;Mickey's body climb ladder 2
 head_climb_ladder = 46  ;Micky's head climbing ladder
 another_space = 47  ;space character used in score
 zero_char = 48  ;zero character (#$30)
+
+;-----------------------------------------------------------------------------------
+;Other
+current_address_offset = 0  ;often used to point to Mickey's head address
+line_below_offset = 21  ;often used to point to Mickey's body address
+two_lines_below_offset = 42  ;used to point to what's below Mickey
+three_lines_below_offset = 63  ;used to point to what's below Mickey
 
 ;-----------------------------------------------------------------------------------
 ;Colours
