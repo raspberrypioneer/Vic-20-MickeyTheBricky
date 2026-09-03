@@ -1,13 +1,14 @@
 @echo off
+cd /d "%~dp0"
 
 ::set "PRG=mickey bricky"
 ::set "MEM=none"
 set "PRG=mickey bricky 8k"
 set "MEM=8k"
 
-cd .\d64
+pushd .\d64
 C:\Users\spwil\Documents\Commodore\Tools\GTK3VICE-3.3-win32-r35872\xvic.exe -model vic20pal -memory %MEM% "Mickey the Bricky.d64:%PRG%"
-cd ..
+popd
 
 ::-----------------------------------------------------------------------------------
 :: Run prg directly

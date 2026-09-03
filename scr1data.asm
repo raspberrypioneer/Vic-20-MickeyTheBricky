@@ -11,12 +11,17 @@ data_for_screen_1_setup
 !byte $97, _SCREEN_HIGH
 !byte $f7, _SCREEN_HIGH
 
-!byte $00, $00  ;in zero page $0f, $10
-!byte $35, _SCREEN_HIGH  ;barrel, in zero page $11, $12
-!byte $20, $00, $00  ;in zero page $13, $14, $15
-!byte $de, _SCREEN_HIGH  ;barrel, in zero page $16, $17
-!byte $20, $00, $00  ;in zero page $18, $19, $1a
-!byte $84, _SCREEN_HIGH+1  ;barrel, in zero page $1b, $1c
-!byte $20, $00, $00, $00  ;in zero page $1d, $1e, $1f, $20
-!byte $ba, _SCREEN_HIGH+1  ;mickey, in zero page $21, $22
-!byte $14, $14  ;in zero page $23, $24
+screen_1_runtime_state
+!byte $00  ;unused: indexed copy deliberately starts with the following byte
+!byte barrel_direction_right
+!byte $35, _SCREEN_HIGH  ;barrel 1 screen address
+!byte space, barrel_direction_right
+!byte barrel_direction_right
+!byte $de, _SCREEN_HIGH  ;barrel 2 screen address
+!byte space, barrel_direction_right
+!byte barrel_direction_right
+!byte $84, _SCREEN_HIGH+1  ;barrel 3 screen address
+!byte space, barrel_direction_right
+!byte $00, $00  ;unused state and jump-in-progress flag
+!byte $ba, _SCREEN_HIGH+1  ;Mickey screen address
+!byte $14, $14  ;characters initially underneath Mickey's head and body

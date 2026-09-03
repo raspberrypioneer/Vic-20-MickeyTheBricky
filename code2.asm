@@ -47,7 +47,7 @@ draw_screen_2
     sta ladder_high
     jsr draw_single_ladder
     inx
-    cpx #22
+    cpx #screen_2_runtime_state-data_for_screen_2_setup
     bne .draw_all_ladders_screen_2_loop
 
     jsr colour_in_platforms
@@ -68,8 +68,8 @@ draw_screen_2
 
     ldx #21  ;address counter loop
 .set_screen_2_zero_page_data_loop
-    lda data_for_screen_2_setup+22,x
-    sta $0f,x
+    lda screen_2_runtime_state,x
+    sta screen_setup_destination_minus_one,x
     dex
     bne .set_screen_2_zero_page_data_loop
 
@@ -79,13 +79,13 @@ draw_screen_2
     sta (barrel2_low),y  ;draw barrel character
     sta (barrel3_low),y  ;draw barrel character
     lda #27
-    sta $30
-    ldy #4  ;pointless
+    sta screen_state_30
+    ldy #4  ;redundant original load: draw_basic_screen immediately loads Y with 5
     jsr draw_basic_screen
     lda #space  ;space character
     sta _SCREEN_ADDR+475
     lda #0  ;player is alive
-    sta player_is_alive
+    sta player_death_pending
     rts
 
 !source "scr2data.asm"
@@ -115,14 +115,14 @@ draw_screen_3
 
     ldx #0  ;address counter loop
 .draw_all_ladders_screen_3_loop
-    lda data_for_screen_3_setup+24,x
+    lda screen_3_ladder_data,x
     sta ladder_low
     inx
-    lda data_for_screen_3_setup+24,x
+    lda screen_3_ladder_data,x
     sta ladder_high
     jsr draw_single_ladder
     inx
-    cpx #18
+    cpx #screen_3_runtime_state-screen_3_ladder_data
     bne .draw_all_ladders_screen_3_loop
 
     ldx #3  ;loop
@@ -160,8 +160,8 @@ draw_screen_3
 
     ldx #21  ;address counter loop
 .set_screen_3_zero_page_data_loop
-    lda data_for_screen_3_setup+42,x
-    sta $0f,x
+    lda screen_3_runtime_state,x
+    sta screen_setup_destination_minus_one,x
     dex
     bne .set_screen_3_zero_page_data_loop
 
@@ -171,11 +171,11 @@ draw_screen_3
     sta (barrel2_low),y  ;draw barrel character
     sta (barrel3_low),y  ;draw barrel character
     lda #27
-    sta $30
-    ldy #4  ;pointless
+    sta screen_state_30
+    ldy #4  ;redundant original load: draw_basic_screen immediately loads Y with 5
     jsr draw_basic_screen
     lda #0  ;player is alive
-    sta player_is_alive
+    sta player_death_pending
     rts
 
 !source "scr3data.asm"
@@ -206,7 +206,7 @@ draw_single_ladder
     lda ladder_low
     adc #21  ;add 21 to get to next line
     sta ladder_low
-    bcc *+4  ;skip high byte update line below
+    bcc *+4  ;no low-byte carry: skip the two-byte high-byte increment
     inc ladder_high
     lda (ladder_low),y
     cmp #space  ;space character
