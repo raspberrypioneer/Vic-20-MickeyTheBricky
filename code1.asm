@@ -1,3 +1,4 @@
+;--------------------------------------------------------------------------------------------------
 start_of_program
 
 ;clear high score including in the scrolling message
@@ -16,7 +17,7 @@ start_game
     ldy #15  ;address counter loop
 .set_vic_chip_registers_x16
     lda data_vic_register_values,y
-    sta _VICCR0,y
+    sta _VIC_SCREEN_LEFT_EDGE,y
     dey
     bpl .set_vic_chip_registers_x16
 
@@ -27,9 +28,9 @@ start_game
     sty screen_number
     dey
     sty player_is_alive
-    sty _DATADIR_B  ;needed for keyboard input
+    sty _VIA_DATADIR_B  ;needed for keyboard input
     dey
-    sty _DATADIR_A  ;needed for keyboard input
+    sty _VIA_DATADIR_A  ;needed for keyboard input
     lda #0
     sta sound_pointer
     lda #6
@@ -67,43 +68,44 @@ clear_player_and_screen_score
     bpl .clear_score_loop
     rts
 
+;--------------------------------------------------------------------------------------------------
 data_vic_register_values
-    !byte 12  ;_HORIZONTAL_ALIGNMENT = $9000  ;36864 bits 0-6 horizontal centering, bit 7 sets interlace scan
-    !byte 38  ;_VERTICAL_ALIGNMENT = $9001  ;36865 vertical centering
-    !byte _VICCR2_VALUE  ;_VICCR2 = $9002  ;36866 see comment below
-    !byte 48  ;_VICCR3 = $9003  ;36867 means 48/2 = 24 rows on screen
-    !byte 105  ;_VICCR4 = $9004  ;36868
-    !byte _VICCR5_VALUE  ;_VICCR5 = $9005  ;36869 see comment below
+    !byte 12  ;_VIC_SCREEN_LEFT_EDGE = $9000  ;36864 bits 0-6 horizontal centering, bit 7 sets interlace scan
+    !byte 38  ;_VIC_SCREEN_TOP_EDGE = $9001  ;36865 vertical centering
+    !byte _VIC_CR2_VALUE  ;_VIC_CR2 = $9002  ;36866 see comment below
+    !byte 48  ;_VIC_CR3 = $9003  ;36867 means 48/2 = 24 rows on screen
+    !byte 105  ;_VIC_CR4 = $9004  ;36868
+    !byte _VIC_CR5_VALUE  ;_VIC_CR5 = $9005  ;36869 see comment below
     !byte 0  ;$9006
     !byte 0  ;$9007
     !byte 0  ;$9008
-    !byte 0  ;_VICCR9 = $9009  ;36873
-    !byte 0  ;_SOUND1 = $900a  ;36874
-    !byte 0  ;_SOUND2 = $900b  ;36875
-    !byte 0  ;_SOUND3 = $900c  ;36876
-    !byte 0  ;_NOISE = $900d  ;36877
-    !byte 127  ;_VOLUME = $900e  ;36878
-    !byte 14  ;_BACKGROUND_BORDER_COLOUR = $900f  ;36879
+    !byte 0  ;_VIC_CR9 = $9009  ;36873
+    !byte 0  ;_VIC_SOUND_BASS = $900a  ;36874
+    !byte 0  ;_VIC_SOUND_ALTO = $900b  ;36875
+    !byte 0  ;_VIC_SOUND_SOPRANO = $900c  ;36876
+    !byte 0  ;_VIC_SOUND_NOISE = $900d  ;36877
+    !byte 127  ;_VIC_VOLUME = $900e  ;36878
+    !byte 14  ;_VIC_BG_BORDER_COL = $900f  ;36879
 
 ;Location of screen, colour map and character set:
-;_VICCR2 bit 7 used with _VICCR5 below (is 0 for 8k, 1 for unexpanded), bits 6-0 is $15 means 21 columns on screen
-;_VICCR5 unexpanded ($ff)
-;_VICCR5_VALUE = $ff  1111 1111
-;7-4 = 1111 + _VICCR2 bit 7 (is 1) means screen is located at $1e00 (7680), and colour map at $9600 (38400)
+;_VIC_CR2 bit 7 used with _VIC_CR5 below (is 0 for 8k, 1 for unexpanded), bits 6-0 is $15 means 21 columns on screen
+;_VIC_CR5 unexpanded ($ff)
+;_VIC_CR5_VALUE = $ff  1111 1111
+;7-4 = 1111 + _VIC_CR2 bit 7 (is 1) means screen is located at $1e00 (7680), and colour map at $9600 (38400)
 ;3-0 = 1111 means character map is located at $1c00 (7168)
 ;See MTV page 130
-;_VICCR5 8k ($cf)
-;7-4 = 1100 + _VICCR2 bit 7 (is 0) means screen is located at $1000 (4096), and colour map at $9400 (37888)
+;_VIC_CR5 8k ($cf)
+;7-4 = 1100 + _VIC_CR2 bit 7 (is 0) means screen is located at $1000 (4096), and colour map at $9400 (37888)
 ;3-0 = 1111 means character map is located at $1c00 (7168)
 
-;-----------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------
 do_barrel_move
     clc
     ldy #current_address_offset
     lda $01  ;screen position low byte
     sta $05  ;colour map low byte
     lda $02  ;screen position high byte
-    adc #_OFFSET_TO_COLOUR_RAM
+    adc #_SCREEN_TO_COLOUR_HIGH_OFFSET
     sta $06  ;colour map high byte
     lda #yellow  ;barrel colour yellow (reset back)
     sta ($05),y  ;set barrel to yellow
@@ -202,7 +204,7 @@ do_barrel_move
     lda $01  ;screen position low byte
     sta $05  ;colour map low byte
     lda $02  ;screen position high byte
-    adc #_OFFSET_TO_COLOUR_RAM
+    adc #_SCREEN_TO_COLOUR_HIGH_OFFSET
     sta $06  ;colour map high byte
     lda #green
     sta ($05),y  ;set barrel to green
@@ -220,6 +222,7 @@ do_barrel_move
     bpl .setup_barrel_address_loop
     rts
 
+;--------------------------------------------------------------------------------------------------
 draw_move_barrels
     ;move top barrel
     ldx #16  ;address counter
@@ -256,7 +259,7 @@ draw_move_barrels
     bne .delay_barrel_move_loop
     jmp player_actions
 
-;-----------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------
 scroll_message_and_wait_to_start
     ldx #0
     ldy #21  ;address counter loop
@@ -288,10 +291,10 @@ scroll_message_and_wait_to_start
     ldx #0
 
 .wait_for_start_input
-    lda _JOYSTICK  ;Read joystick address
+    lda _VIA_JOYSTICK  ;Read joystick address
     and #32  ;Fire button
     beq .clear_scroll_message  ;Fire pressed, go to start game
-    lda _KEYB_COLS  ;Read keyboard address
+    lda _VIA_KEYB_ROWS  ;Read keyboard address
     and #2  ;Enter key
     beq .clear_scroll_message  ;Enter pressed, go to start game
     dec $50
@@ -311,26 +314,22 @@ scroll_message_and_wait_to_start
     bpl .clear_scroll_message_char
     rts
 
-data_scroll_message
-    !byte $20,$48,$49,$47,$48,$20,$53,$43  ;  HIGH SC
-    !byte $4f,$52,$45,$20,$30,$31,$31,$39  ; ORE 0119  High score is saved in scroll_message+12
-    !byte $30,$30,$20,$23,$23,$23,$23,$23  ; 00 #####
-    !byte $23,$23,$23,$23,$23,$23,$23,$23  ; ########
-    !byte $23,$23,$23,$23,$23,$23,$23,$23  ; ########
-    !byte $20,$46,$49,$52,$45,$42,$49,$52  ;  FIREBIR
-    !byte $44,$20,$53,$4f,$46,$54,$57,$41  ; D SOFTWA
-    !byte $52,$45,$20,$50,$52,$45,$53,$45  ; RE PRESE
-    !byte $4e,$54,$53,$20,$26,$20,$4d,$49  ; NTS ? MI  ? is Micky's head looking right
-    !byte $43,$4b,$45,$59,$20,$2a,$20,$54  ; CKEY ? T  ? is Micky's head looking left
-    !byte $48,$45,$20,$42,$52,$49,$43,$4b  ; HE BRICK
-    !byte $59,$20,$42,$59,$20,$44,$41,$56  ; Y BY DAV
-    !byte $45,$20,$54,$4f,$4e,$47,$20,$27  ; E TONG ?  ? is copyright circle
-    !byte $20,$31,$39,$38,$34,$20,$23,$23  ;  1984 ##
-    !byte $23,$23,$23,$23,$23,$23,$23,$23  ; ########
-    !byte $23,$23,$23,$23,$23,$23,$23,$23  ; ########
-    !byte $23,$23                          ; ##
+;--------------------------------------------------------------------------------------------------
+; Scroll message at title screen
+; high score is saved in scroll_message+12
+; & is Micky's head looking right
+; * is Micky's head looking left
+; ' is copyright circle
 
-;-----------------------------------------------------------------------------------
+data_scroll_message
+    !pet " high score 011900 "
+    !pet "#####################"
+    !pet " firebird software presents "
+    !pet "& mickey * the bricky"
+    !pet " by dave tong ' 1984 "
+    !pet "####################"
+
+;--------------------------------------------------------------------------------------------------
     nop
 interrupt_actions
     lda music_on_off
@@ -339,10 +338,10 @@ interrupt_actions
     bne .end_goto_hardware_IRQ_vector
     lda sound_delay1
     sta sound_delay2
-    lda _SOUND3
+    lda _VIC_SOUND_SOPRANO
     beq .play_sound_track_update_bonus
     lda #0  ;sound off
-    sta _SOUND3
+    sta _VIC_SOUND_SOPRANO
 .end_goto_hardware_IRQ_vector
     jmp $eabf  ;hardware interrupt vector
 
@@ -383,7 +382,7 @@ interrupt_actions
     ldy sound_pointer
     iny
     lda data_for_sound,y
-    sta _SOUND3
+    sta _VIC_SOUND_SOPRANO
     cpy #31
     bmi .sound_end
     ldy #0  ;sound
@@ -392,12 +391,14 @@ interrupt_actions
     clc
     bcc .end_goto_hardware_IRQ_vector
 
+;--------------------------------------------------------------------------------------------------
 data_for_sound
     !byte $00, $be, $af, $af, $af, $be, $af, $af
     !byte $af, $c3, $c3, $be, $be, $b8, $94, $94
     !byte $94, $c3, $c3, $be, $be, $b8, $b8, $cf
     !byte $cf, $ca, $c3, $be, $b8, $af, $01, $01
 
+;--------------------------------------------------------------------------------------------------
 update_score
     ldy #4  ;address counter
 .start_update_score
@@ -425,14 +426,14 @@ update_score
     lda #1
     bne .start_update_score
 
-;-----------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------
 save_y_and_update_score
     sty $50
     jsr .start_update_score
     ldy $50
     rts
 
-;-----------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------
 mickey_falls_off_platform
     tya
     pha
@@ -460,7 +461,7 @@ mickey_falls_off_platform
 .start_fall_off_platform
     sei  ;disable interrupt (stop game play sound and bonus countdown)
     lda #240  ;sound
-    sta _SOUND3
+    sta _VIC_SOUND_SOPRANO
 
 .mickey_falls_off_platform_loop
     clc
@@ -486,7 +487,7 @@ mickey_falls_off_platform
     bne .fall_delay_loop
     dex
     bne .fall_delay_loop
-    dec _SOUND3
+    dec _VIC_SOUND_SOPRANO
 
     ldy #three_lines_below_offset
     lda (mickey_low),y
@@ -503,7 +504,7 @@ mickey_falls_off_platform
     inc mickey_high
     jmp player_dies
 
-;-----------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------
 player_dies
     ldy #0  ;player is alive
     sty player_is_alive  ;reset alive indicator for next time
@@ -515,7 +516,7 @@ player_dies
     ldy #254  ;sound
     lda #128
     sei  ;disable interrupt (stop game play sound and bonus countdown)
-    sty _SOUND3
+    sty _VIC_SOUND_SOPRANO
 
 .sound_loop_end_life_start
     ldx #6  ;loop
@@ -524,8 +525,8 @@ player_dies
     bne .sound_delay_end_life
     dex
     bne .sound_delay_end_life
-    dec _SOUND3
-    cmp _SOUND3
+    dec _VIC_SOUND_SOPRANO
+    cmp _VIC_SOUND_SOPRANO
     bmi .sound_loop_end_life_start
 
     dec player_lives
@@ -534,7 +535,7 @@ player_dies
     jsr update_player_score
     jmp start_game  ;no lives left, restart game from the beginning
 
-;-----------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------
 draw_screen_using_screen_number
     lda screen_number
     clc
@@ -555,17 +556,18 @@ draw_screen_using_screen_number
 
     sei  ;disable interrupt (stop game play sound and bonus countdown)
     ldy #4  ;loop
-    sty _SOUND3
+    sty _VIC_SOUND_SOPRANO
 .sound_loop_2_speakers
     dex
     bne .sound_loop_2_speakers
-    dec _SOUND2
+    dec _VIC_SOUND_ALTO
     bne .sound_loop_2_speakers
     dey
     bne .sound_loop_2_speakers
     cli  ;enable interrupt (enable game play sound and bonus countdown)
     jmp prepare_mickey_start
 
+;--------------------------------------------------------------------------------------------------
 data_screen_start_addresses
     !byte <draw_screen_1, >draw_screen_1
     !byte <draw_screen_1, >draw_screen_1
@@ -573,7 +575,7 @@ data_screen_start_addresses
     !byte <draw_screen_3, >draw_screen_3
     !byte <draw_screen_4, >draw_screen_4
 
-;-----------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------
 update_player_score
 
     ldy #0  ;address counter
@@ -601,7 +603,7 @@ update_player_score
     ldx $58
     rts
 
-;-----------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------
 player_actions
     lda jump_allowed
     beq check_for_a_jump_action
@@ -638,10 +640,10 @@ goto_move_barrels
     jmp draw_move_barrels
 
 check_for_a_jump_action
-    lda _JOYSTICK  ;Read joystick address
+    lda _VIA_JOYSTICK  ;Read joystick address
     and #32  ;Fire button
     beq .jump_action
-    lda _KEYB_COLS  ;Read keyboard address
+    lda _VIA_KEYB_ROWS  ;Read keyboard address
     and #2  ;Enter key
     beq .jump_action
     jmp check_up_direction
@@ -656,10 +658,10 @@ check_for_a_jump_action
 .jump_action_ok
     ldy #21
     ldx $55
-    lda _KEYB_COLS  ;Read keyboard address
+    lda _VIA_KEYB_ROWS  ;Read keyboard address
     and #128
     beq .jump_right_direction
-    lda _KEYB_COLS  ;Read keyboard address
+    lda _VIA_KEYB_ROWS  ;Read keyboard address
     and #8
     bne check_left_jump
 
@@ -668,10 +670,10 @@ check_for_a_jump_action
     dey
 
 check_left_jump
-    lda _JOYSTICK  ;Read joystick address
+    lda _VIA_JOYSTICK  ;Read joystick address
     and #16  ;Left direction
     beq .jump_left_direction
-    lda _KEYB_COLS  ;Read keyboard address
+    lda _VIA_KEYB_ROWS  ;Read keyboard address
     and #16
     bne .jump_left_right_or_straight_up
 
@@ -728,10 +730,10 @@ goto_move_barrels2
     jmp draw_move_barrels
 
 check_up_direction
-    lda _JOYSTICK  ;Read joystick address
+    lda _VIA_JOYSTICK  ;Read joystick address
     and #4  ;Up direction
     beq .check_on_ladder
-    lda _KEYB_COLS  ;Read keyboard address
+    lda _VIA_KEYB_ROWS  ;Read keyboard address
     and #64
     bne check_down_direction
 
@@ -761,10 +763,10 @@ goto_player_dies2
     jmp draw_move_barrels
 
 check_down_direction
-    lda _JOYSTICK  ;Read joystick address
+    lda _VIA_JOYSTICK  ;Read joystick address
     and #8  ;Down direction
     beq .move_down_direction
-    lda _KEYB_COLS  ;Read keyboard address
+    lda _VIA_KEYB_ROWS  ;Read keyboard address
     and #32
     bne .check_left_direction
 
@@ -790,10 +792,10 @@ check_down_direction
     bcs goto_player_dies2
 
 .check_left_direction
-    lda _JOYSTICK  ;Read joystick address
+    lda _VIA_JOYSTICK  ;Read joystick address
     and #16  ;Right direction
     beq .joystick_left_direction
-    lda _KEYB_COLS  ;Read keyboard address
+    lda _VIA_KEYB_ROWS  ;Read keyboard address
     and #16
     bne .check_right_direction
 
@@ -849,10 +851,10 @@ check_down_direction
     jmp player_dies
 
 .check_right_direction
-    lda _KEYB_COLS  ;Read keyboard address
+    lda _VIA_KEYB_ROWS  ;Read keyboard address
     and #128
     beq .move_right_direction
-    lda _KEYB_COLS  ;Read keyboard address
+    lda _VIA_KEYB_ROWS  ;Read keyboard address
     and #8
     bne collision_check_active_sprite
 
@@ -947,7 +949,7 @@ check_got_treasure
 
     ;got treasure (hammer, bag, saw) here
     lda #245  ;sound
-    sta _SOUND3
+    sta _VIC_SOUND_SOPRANO
     lda #16  ;sound delay
     sta sound_delay2
     lda #space  ;space character
@@ -956,7 +958,7 @@ check_got_treasure
     lda mickey_low
     sta $60  ;colour map low byte
     lda mickey_high
-    adc #_OFFSET_TO_COLOUR_RAM
+    adc #_SCREEN_TO_COLOUR_HIGH_OFFSET
     sta $61  ;colour map high byte
     lda #yellow
     ldy #line_below_offset
@@ -1001,33 +1003,33 @@ increment_score_at_end
     jsr .check_for_pause
     jmp draw_move_barrels
 
-;-----------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------
 ;Pause game by pressing odd numbers on the keyboard (and a few other keys on that part of the matrix)
 ;Bonus counts down via the interrupt however!
 .check_for_pause
-    lda _KEYB_COLS  ;Read keyboard address
+    lda _VIA_KEYB_ROWS  ;Read keyboard address
     and #1
     beq .pause_key_pressed
     rts
 
 .pause_key_pressed
-    lda _KEYB_COLS  ;Read keyboard address
+    lda _VIA_KEYB_ROWS  ;Read keyboard address
     and #1
     beq .pause_key_pressed
 
 .pause_key_released
-    lda _KEYB_COLS  ;Read keyboard address
+    lda _VIA_KEYB_ROWS  ;Read keyboard address
     and #1
     bne .pause_key_released
 
 ;For key debounce
 .pause_key_pressed2
-    lda _KEYB_COLS  ;Read keyboard address
+    lda _VIA_KEYB_ROWS  ;Read keyboard address
     and #1
     beq .pause_key_pressed2
     rts
 
-;-----------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------
 mickey_animate_and_collision_check_active_sprite
     ldy #current_address_offset
     lda (mickey_low),y
@@ -1048,6 +1050,7 @@ mickey_animate_and_collision_check_active_sprite
     sec
     rts
 
+;--------------------------------------------------------------------------------------------------
 mickey_animate_and_collision_check_last_sprite
     stx $55  ;X is mickey head new value
     ldy #current_address_offset
@@ -1075,7 +1078,7 @@ mickey_animate_and_collision_check_last_sprite
     clc
     rts
 
-;-----------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------
 data_junk_hex_1701_255_bytes
     !byte $00,$11,$23,$62,$bb,$33,$23,$33
     !byte $12,$33,$b1,$23,$a1,$33,$23,$ce
@@ -1110,7 +1113,7 @@ data_junk_hex_1701_255_bytes
     !byte $12,$72,$76,$33,$d3,$23,$31,$b9
     !byte $23,$11,$33,$89,$b1,$13,$23
 
-;-----------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------
 draw_screen_4
     jsr clear_screen
 
@@ -1193,7 +1196,7 @@ draw_screen_4
 
 !source "scr4data.asm"
 
-;-----------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------
 draw_screen_1
     jsr clear_screen
 

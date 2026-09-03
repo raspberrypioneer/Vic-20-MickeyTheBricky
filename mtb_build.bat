@@ -9,7 +9,12 @@ set "PRGHDR=prgheader.bin"
 call :create_prg_file_for_version
 
 :: Binary file comparison for unexpanded version
-fc.exe /b ".\prg\%PRG%" ".\prg\Mickey the Bricky original.prg"
+fc.exe /b ".\prg\%PRG%" ".\prg\Mickey the Bricky original.prg" && (
+    powershell write-host -back Green Programs match
+) || (
+    powershell write-host -back Red Programs do not match
+)
+
 echo --- Unexpanded version built ---
 
 ::-----------------------------------------------------------------------------------
@@ -19,7 +24,12 @@ set "PRGHDR=prgheader8k.bin"
 call :create_prg_file_for_version
 
 :: Binary file comparison for tested 8k version
-fc.exe /b ".\prg\%PRG%" ".\prg\mickey bricky 8k tested.prg"
+fc.exe /b ".\prg\%PRG%" ".\prg\mickey bricky 8k tested.prg" && (
+    powershell write-host -back Green Programs match
+) || (
+    powershell write-host -back Red Programs do not match
+)
+
 echo --- 8k version built ---
 
 goto :build_d64
@@ -30,9 +40,19 @@ goto :build_d64
 
 :: Compile main programs
 .\bin\acme.exe -l .\build\symbols -o .\build\main -DUSE_8k_MEMORY_LAYOUT=%USE_8k_MEMORY_LAYOUT% .\main.asm
+if errorlevel 1 (
+    powershell write-host -back Red Compiled with errors
+    exit /b 1
+)
+powershell write-host -back Green Compiled ok
+
 
 :: Add the 2 load address bytes for the PRG header (PRG header created using Notepad++ with hex editor plugin)
 copy /b .\build\%PRGHDR%+.\build\main ".\prg\%PRG%" >nul
+if errorlevel 1 (
+    powershell write-host -back Red Failed to create program file
+    exit /b 1
+)
 
 exit /B
 
